@@ -1,0 +1,306 @@
+#赛车模型
+import math
+
+def reward_function(params):
+    """
+    主奖励函数入口。
+    这是模型的"大脑"，每一步都会调用这个函数来决定动作的优劣。
+    """
+
+    # ==========================================================
+    # 1. 参数读取 (Input Parameters)
+    # 从 AWS DeepRacer 仿真环境中获取当前车辆的状态数据
+    # ==========================================================
+    
+    # 车辆四个轮子是否都在赛道上（布尔值：True/False）
+    all_wheels_on_track = params['all_wheels_on_track']
+    
+    # 当前速度（米/秒）
+    speed = params['speed']
+    
+    # 距离赛道中心线的距离（米）
+    distance_from_center = params['distance_from_center']
+    
+    # 赛道的总宽度（米）
+    track_width = params['track_width']
+    
+    # 当前的转向角度（度），正数右转，负数左转
+    steering_angle = params['steering_angle']
+    
+    # 最近的两个检查点索引（用于判断当前位置）
+    closest_waypoints = params['closest_waypoints']
+    
+    # 当前完成的进度百分比 (0-100)
+    progress = params['progress']
+
+    # ==========================================================
+    # 2. 安全底线 (Safety First)
+    # 设计思路：这是一票否决制。只要掉下去，奖励直接归零。
+    # ==========================================================
+    
+    # 如果轮子不在赛道上（冲出赛道）
+    if not all_wheels_on_track:
+        # 返回一个极小的数，告诉模型：这个动作非常糟糕！
+        return 1e-4  # 等于 0.0001
+
+    # ==========================================================
+    # 3. 居中奖励 (Stay in the Center)
+    # 设计思路：使用线性惩罚。越靠边，分数越低。
+    # ==========================================================
+    
+    # 计算赛道半宽
+    track_half_width = track_width / 2.0
+    
+    # 计算当前位置占赛道半宽的比例 (0=中心, 1=边缘)
+    distance_ratio = distance_from_center / track_half_width
+    
+    # 硬性边界检查：如果距离边缘小于10%的缓冲带，直接重罚
+    # 这样可以防止车辆试图蹭着边缘跑
+    if distance_ratio > 0.9:
+        return 1e-3  # 比掉下去好一点，但还是很差
+        
+    # 线性奖励：在中心得1分，在0.9处得0.1分
+    center_reward = 1.0 - distance_ratio
+
+    # ==========================================================
+    # 4. 防蛇形走位 (Anti-Zigzag)
+    # 设计思路：大角度转向通常是"之"字形的根源，必须惩罚。
+    # ==========================================================
+    
+    # 取转向角的绝对值，我们只关心转了多少度，不关心方向
+    abs_steering = abs(steering_angle)
+    
+    # 根据转向幅度给予折扣因子
+    if abs_steering > 20:
+        # 急转弯：奖励打5折（模型会尽量避免这种情况）
+        steering_factor = 0.5
+    elif abs_steering > 10:
+        # 中等转弯：轻微打折
+        steering_factor = 0.8
+    else:
+        # 直行或小角度微调：满分
+        steering_factor = 1.0
+
+    # ==========================================================
+    # 5. 动态速度控制 (Dynamic Speed Control)
+    # 设计思路：利用已知的赛道地图（Checkpoint Index）来限速。
+    # ==========================================================
+    
+    # 获取前方检查点索引
+    next_point_idx = closest_waypoints[1]
+    
+    # --- 地形分区定义 (基于赛道图片分析) ---
+    # 直道区域：赛道中间的长直道
+    is_straight = (14 <= next_point_idx <= 61) or (next_point_idx >= 107)
+    # 急弯区域：最难的发卡弯 (80-106)
+    is_sharp_turn = (80 <= next_point_idx <= 106)
+    # 缓弯区域：剩下的弯道
+    is_medium_turn = (62 <= next_point_idx <= 79) or (1 <= next_point_idx <= 14)
+
+    # --- 分段奖励逻辑 ---
+    if is_straight:
+        # 直道：鼓励全速冲刺 (最高2.5)
+        # 速度越快，得分越高 (speed/2.5)
+        speed_reward = speed / 2.5
+        
+    elif is_sharp_turn:
+        # 急弯：必须减速！
+        # 如果速度超过1.2，给极低奖励；否则给0.8分
+        # 这里故意不设高分，因为急弯求稳不求快
+        if speed > 1.2:
+            speed_reward = 0.2
+        else:
+            speed_reward = 0.8
+            
+    elif is_medium_turn:
+        # 缓弯：允许稍快一点
+        if speed > 2.0:
+            speed_reward = 0.5
+        else:
+            speed_reward = speed / 2.0
+            
+    else:
+        # 其他情况默认处理
+        speed_reward = speed / 2.5
+
+    # ==========================================================
+    # 6. 最终加权计算 (Final Calculation)
+    # 设计思路：加权求和，速度最重要，居中次之。
+    # ==========================================================
+    
+    total_reward = (
+        speed_reward * 0.5 +      # 速度占 50% 权重
+        center_reward * 0.4 +     # 居中占 40% 权重
+        steering_factor * 0.1     # 平滑占 10% 权重
+    )
+
+    # 确保奖励不为负，且不低于最低值
+    return float(max(total_reward, 1e-3))
+
+#定向修改
+# ==========================================================
+# 5. 动态速度控制 (Speed Boost Edition)
+# 目标：消除不必要的低速，提升整体圈速
+# ==========================================================
+
+# 获取当前位置
+next_point_idx = closest_waypoints[1]
+
+# 地形分区定义
+is_straight = (14 <= next_point_idx <= 61) or (next_point_idx >= 107)
+is_sharp_turn = (80 <= next_point_idx <= 106)
+is_medium_turn = (62 <= next_point_idx <= 79) or (1 <= next_point_idx <= 14)
+
+# 转向绝对值（用于判断是否正在过弯）
+abs_steering = abs(steering_angle)
+
+# ----- 核心修改点 -----
+if is_straight:
+    # 1. 直道：暴力全速
+    # 只要速度达到2.0以上，就给满分甚至加分
+    if speed >= 2.0:
+        speed_reward = 1.2  # 额外加成，鼓励保持高速
+    else:
+        # 即使没到2.0，线性追赶，不要给太低分
+        speed_reward = speed / 2.0
+
+elif is_medium_turn:
+    # 2. 缓弯：允许高速过弯
+    # 原代码惩罚 >2.0 的速度，现在放宽到 2.3
+    if speed > 2.3:
+        speed_reward = 0.9  # 稍微收敛一点点，防止冲出
+    elif speed > 1.5:
+        speed_reward = 1.1  # 最佳过弯速度区间，给予奖励
+    else:
+        speed_reward = 0.8  # 太慢了，扣分
+
+elif is_sharp_turn:
+    # 3. 急弯（重点优化区）：大幅提升限速
+    # 原代码：>1.2 直接判死刑 (0.2分)
+    # 新代码：允许冲到 1.8，鼓励更激进的走线
+    if speed > 1.8:
+        speed_reward = 0.7  # 确实有点快，但还不至于重罚
+    elif speed > 1.2:
+        speed_reward = 1.0  # 理想区间，满分鼓励
+    else:
+        speed_reward = 0.8  # 低于1.2，说明太怂了，扣分
+
+else:
+    # 其他过渡区域
+    speed_reward = speed / 2.5
+
+# ==========================================================
+# 6. 新增：加速度奖励 (Acceleration Bonus)
+# 目的：解决 Waypoint 5, 11, 18 等处的“0.5 低速卡顿”
+# ==========================================================
+acceleration_reward = 1.0
+if 'previous_speed' in params:
+    acc = speed - params['previous_speed']
+    # 如果正在加速（acc > 0），给予额外奖励
+    if acc > 0.1:
+        acceleration_reward = 1.0 + acc * 0.5  # 加速越快，奖励越多
+    # 如果正在严重减速（acc < -0.5），且不在急弯，给予惩罚
+    elif acc < -0.5 and not is_sharp_turn:
+        acceleration_reward = 0.8
+
+# 保存当前速度，供下一步计算加速度
+params['previous_speed'] = speed
+
+# ==========================================================
+# 7. 最终速度加权（整合）
+# ==========================================================
+# 将速度奖励与加速度奖励相乘，形成合力
+final_speed_reward = speed_reward * acceleration_reward
+
+# 意思注解
+import math  # 导入数学库（虽然本代码未使用复杂函数，但保留以备扩展）
+
+def reward_function(params):
+    """
+    主奖励函数：兼顾稳定性与速度，已修复所有运行错误
+    """
+    
+    # ====================== 1. 参数读取（AWS官方定义的输入变量）======================
+    track_width = params['track_width']                    # 赛道总宽度（单位：米）
+    distance_from_center = params['distance_from_center']  # 车辆距离赛道中心线的距离（单位：米）
+    all_wheels_on_track = params['all_wheels_on_track'] # 布尔值：True（四轮都在赛道上）/ False（有轮出界）
+    steering_angle = abs(params['steering_angle'])       # 转向角绝对值（单位：度，去掉正负号只看大小）
+    speed = params['speed']                              # 当前车速（单位：米/秒）
+    progress = params['progress']                        # 完成赛道的百分比（0到100）
+    waypoints = params['waypoints']                      # 赛道上所有预设的坐标点（用于计算方向）
+    closest_waypoints = params['closest_waypoints']      # 距离车辆最近的两个关键点的索引编号
+    
+    # ====================== 2. 安全底线（一票否决制）======================
+    if not all_wheels_on_track:  # 如果检测到有轮子不在赛道上
+        return 1e-3  # 立即返回极小值（0.001），告诉模型这是极其严重的错误
+    
+    # ====================== 3. 居中奖励（防止压线）======================
+    track_half_width = track_width / 2.0                 # 计算半宽（从中心线到边缘的距离）
+    distance_ratio = distance_from_center / track_half_width  # 计算比例：0=完美居中，1=压在边缘
+    
+    if distance_ratio > 0.9:  # 如果距离边缘只剩10%的宽度
+        return 1e-3  # 直接判死刑，防止车辆试图擦边跑
+    
+    center_reward = 1.0 - distance_ratio  # 线性奖励：越靠近中心分越高（中心1分，边缘0.1分）
+    
+    # ====================== 4. 防蛇形奖励（平稳驾驶）======================
+    ABS_STEERING_THRESHOLD = 15.0  # 设定转向阈值：15度
+    if steering_angle > ABS_STEERING_THRESHOLD:  # 如果方向盘打得过大（超过15度）
+        steering_reward = 0.8  # 扣掉20%的奖励，惩罚剧烈摆动
+    else:
+        steering_reward = 1.0  # 平稳转向，满分奖励
+    
+    # ====================== 5. 动态速度控制（核心：分地形限速）======================
+    next_point_idx = closest_waypoints[1]  # 获取前方最近的检查点索引
+    
+    # 地形分区（根据你的赛道图片固定布局）
+    is_straight = (14 <= next_point_idx <= 61) or (next_point_idx >= 107)  # 直道区域
+    is_sharp_turn = (80 <= next_point_idx <= 106)                         # 急弯区域（发卡弯）
+    is_medium_turn = (62 <= next_point_idx <= 79) or (1 <= next_point_idx <= 14)  # 缓弯区域
+    
+    # 速度奖励计算
+    if is_straight:  # 如果在直道上
+        if speed >= 2.0:  # 如果速度达到2.0m/s以上
+            speed_reward = 1.2  # 给1.2倍加成，鼓励全速冲刺
+        else:
+            speed_reward = speed / 2.0  # 没到2.0按比例给分
+    elif is_medium_turn:  # 如果在缓弯
+        if speed > 2.3:  # 如果速度过快（>2.3）
+            speed_reward = 0.9  # 轻微惩罚
+        elif speed > 1.5:  # 如果速度在1.5-2.3之间（最佳过弯速度）
+            speed_reward = 1.1  # 额外加分，鼓励积极过弯
+        else:
+            speed_reward = 0.8  # 太慢了，扣分
+    elif is_sharp_turn:  # 如果在急弯
+        if speed > 1.8:  # 放宽了原有限速（原1.2），允许更快过弯
+            speed_reward = 0.7  # 确实有点快，但还不至于重罚
+        elif speed > 1.2:  # 理想区间
+            speed_reward = 1.0  # 满分
+        else:
+            speed_reward = 0.8  # 太保守，扣分
+    else:  # 其他区域
+        speed_reward = speed / 2.5  # 默认追赶速度
+    
+    # ====================== 6. 速度稳定性奖励（替代加速度）======================
+    stability_reward = 1.0  # 默认满分
+    if progress > 0:  # 如果比赛已开始
+        # 根据进度估算一个“合理速度”（起步慢，越往后越快）
+        expected_speed = 1.0 + (progress / 100.0) * 1.5
+        speed_diff = abs(speed - expected_speed)  # 计算实际速度与预期速度的差距
+        if speed_diff > 0.5:  # 如果差距过大（急加速或急刹车）
+            stability_reward = 0.9  # 轻微惩罚，鼓励平顺驾驶
+    
+    # ====================== 7. 总奖励加权整合（算总账）======================
+    reward = (
+        center_reward * 0.45 +        # 中心线权重45%（最重要，别出界）
+        steering_reward * 0.1 +       # 转向权重10%（别画龙）
+        speed_reward * 0.35 +         # 速度权重35%（核心优化目标）
+        stability_reward * 0.1         # 稳定性权重10%（别急刹）
+    )
+    
+    # ====================== 8. 进度加成（鼓励跑完）======================
+    if progress % 10 == 0 and progress > 0:  # 每完成10%进度
+        reward += progress / 200.0  # 加一点点分（例如30%进度加0.15分）
+    
+    # ====================== 9. 返回最终奖励======================
+    return float(max(reward, 1e-3))  # 确保奖励不会是负数或0
