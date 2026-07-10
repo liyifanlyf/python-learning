@@ -124,3 +124,39 @@ for循环经常和range()函数一起使用，基本使用方式如下：
 语句格式：
     while<条件>:
       <代码块>
+4.4 循环扩展及控制语句
+1、循环扩展模块：
+  当while循环正常执行之后，程序会绝续执行else语句中内容。else语句只在循环正常执行之后才执行并结束。
+  语法格式：
+            while<条件>：
+                <语句块1>
+            else:
+                <语句块2>
+
+2.循环控制语句：
+1）continue语句：
+  用来结束当前当次循环，即跳出循环体中下面尚未执行的语句，但不跳出当前循环。
+2）break语句：
+  跳出最内层循环，终止该循环后，从循环后的代码继续执行。
+
+
+4.5 程序的异常处理
+>>>3/0
+ZeroDivisionError:division by zero
+>>>"x"+1
+TypeError:Can't convert 'int' object to str implicitly
+>>>{1,2,3}*2
+TypeError:unsupported operand type(s) for*: 'set' and 'int'
+>>>print(name)
+NameError:name 'name' is not defined
+>>>f=open("wangyan.txt","r")
+FileNotFoundError:[Errno2] No such file or directory:'wangyan.txt'
+>>>len(10110234)
+TypeError:object of type 'int' has no len()
+ValueError:类型对但值无效 如：int("abc")
+1.try...except:
+    Python处理异常程序最简单的形式就是try...except...,类似于单分支选择结构。使用语法为：
+  try：
+      #可能会发生异常的代码，先执行以下试试看
+  except<异常类型>：
+      #如果try中代码抛出异常并被except捕获，执行此处代码
