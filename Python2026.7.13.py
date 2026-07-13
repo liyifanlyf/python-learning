@@ -1,3 +1,47 @@
+#6.2 文件的操作
+f=open('1.txt')#文件未创建
+a=f.read(3)
+print(a)
+
+f=open('1.txt','r',encoding='utf-8')
+a=f.readline()
+print(a)
+
+f=open('1.txt','r',encoding='utf-8')
+a=f.readlines()
+print(a)
+
+f=open('1.txt','r',encoding='utf-8')
+a=f.readlines()
+print(a)
+
+f=open('1.txt','r',encoding='utf-8')
+for i in f:
+  print(i,end='')
+
+f=open('1.txt','r',encoding='utf-8')
+a=f.readlines()
+for i in a:
+  print(a)
+
+f=open('1.txt','r',encoding='utf-8')
+a=f.readlines()
+f.seek(5)
+for i in f:
+  print(i,end='')
+
+f=open('1.txt','w')
+f.write('abc')
+f.close()
+
+f=open('1.txt','a')
+f.writelines('\nabc')
+f.close()
+
+f=open('1.txt','a')
+f.writelines(['a','+','b'])
+f.close()
+
 Python 3.13.13 (tags/v3.13.13:01104ce, Apr  7 2026, 19:25:48) [MSC v.1944 64 bit (AMD64)] on win32
 Enter "help" below or click "Help" above for more information.
 >>> 
