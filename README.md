@@ -587,3 +587,58 @@ sort（）方式的key参数
   height:窗口高度
   startx:窗口左侧与屏幕左侧的距离
   starty:窗口顶部与屏幕顶部的距离
+        import turtle
+        turtle.setup()
+        turtle.setup(height=100)
+
+        import turtle as t
+        t.setup()
+
+        from turtle import setup  #turtle的其它函数不能使用
+        setup()    #*可以导入全部函数
+2、画笔状态函数
+    pendown()#(pd;down)        放下画笔#绘制图形
+    penup() #(pu;up)           拿起画笔#画不了图形
+    pensize()                  设置画笔线条的粗细
+    pencolor()                 设置画笔颜色
+    color( , )                 设置画笔和填充颜色
+    begin_fill()               填充图形前，调用该方法
+    end_fill()                 填充图形结束
+    filling()                  返回填充状态，True为填充，False为未填充
+    clear()                    清空当前画笔的位置
+    reset()                    清空当前窗口，并重置位置等状态为默认值
+    write(str,font=None)       输出font字体的字符串    #font=('字体名称',字体大小,'字体类型')
+    screensize( , )#(长,宽,'颜色')    设置画布的长和宽
+    hideturtle()               隐藏画笔的turtle形状
+3、画笔运动函数
+    forward    #fd             沿着当前指定方向前进的距离
+    backward                   沿着当前相反方向后退指定距离
+    setheading(angle)          设置当前朝向为angle角度
+    circle(r,e)                绘制一个指定半径r和角度e的圆或弧形
+    undo()                     撤销画笔最后一步动作
+    right(angle)               向右旋转angle角度
+    left(angle)                向左旋转angle角度
+    goto(x,y)                  移动到绝对坐标（x，y）处
+    speed()                    设置画笔的绘制速度，参数为0~10  #超过10后就是立即创造
+    dot(r,color)               绘制一个指定半径r和颜色color的圆点
+    home()                     设置当前画笔位置为原点，朝向东（正右）
+
+
+9.2 random库函数
+两大核心概念：
+    随机数：没有规律的数。
+    伪随机数：计算机算出来的，看起来随机，其实是有规律的（由“种子”决定）
+梅森旋转算法：这是一种生成伪随机数的高级算法。
+    考试潜台词：因为这个算法太好了，所以除了银行加密这种极高要求的地方，普通工程（比如做个小游戏，抽个奖）用它完全没问题！
+绝对考点（死规定）：
+    1、导包：用import random，千万别忘了！
+    2、首字母：全部是小写random，不要写成Random
+          seed()            设置种子    只要种子相同，生成的随机序列就完全一致(用于复现结果)
+          random()          随机小数    范围是[0.0,1.0),包含0.0，不包含1.0
+          randint(a,b)      随机整数    闭区间！[a,b]两头都能取到。(最常考边界)
+          randrange(a,b,k)  随机整数    半开区间！[a,b)能取到a,取不到b。类似于range()。有三个参数依次是起始位置，结束位置和步长
+          choice(seq)       随机选1个   从列表、元组、字符串中选一个。如果序列为空会报错
+          sample(seq,k)     随机选k个   不放回抽样。返回一个新列表，原列表不变
+          shuffle(seq)      打乱顺序    原地修改！直接打乱原列表，没有返回值（返回None）
+          uniform(a,b)      随机小数    生成[a,b]之间的随机浮点数
+      #seq意为序列类型，需要填入列表，元组，字符串中的一个
