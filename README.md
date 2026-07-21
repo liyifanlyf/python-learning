@@ -578,3 +578,12 @@ sort（）方式的key参数
     核心功能：执行： 执行一个字符串里的Python代码
     能处理的：循环，条件判断，赋值语句，函数定义
     不能处理的：无
+
+
+第九章 Python标准库
+1.窗体函数 #能够进行基本的图形绘制
+  turtle.setup(width,height,startx,starty)
+  width:窗口宽度
+  height:窗口高度
+  startx:窗口左侧与屏幕左侧的距离
+  starty:窗口顶部与屏幕顶部的距离
