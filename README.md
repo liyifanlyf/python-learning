@@ -642,3 +642,84 @@ sort（）方式的key参数
           shuffle(seq)      打乱顺序    原地修改！直接打乱原列表，没有返回值（返回None）
           uniform(a,b)      随机小数    生成[a,b]之间的随机浮点数
       #seq意为序列类型，需要填入列表，元组，字符串中的一个
+
+
+9.3 time库函数
+    time库是Python提供的处理时间标准库。time库的功能主要分为3个方面：时间处理，时间格式化和计时。
+time库的函数： time.time()
+              time.localtime
+              asctime(localtime([secs])
+              time.sleep(secs)
+              time.strftime(format[,t])
+1、time.time()    #以数字形式返回当前时间
+    意思：获取时间戳。
+    解释：它返回的是从1970年1月1日到现在一共过了多少秒（通常带小数）。你可以把它想象成电脑内部记录时间的“秒表读数”。
+    考点：常用来计算程序运行了多久。
+2、time.localtime([secs])    #本地时间
+    意思：将时间戳转换为本地时间的结构化数据。
+    解释：它把一个秒数变成了一个包含年，月，日，时，分，秒等信息的“结构体”。
+    考点：括号里的[secs]，不写就是当前时间
+            #localtime(time())
+3、asctime()    #固定格式
+    意思：把结构体变成固定样子的字符串。
+    考点：固定格式不能改！长的像 Tue Jul 21……。
+          #asctime(localtime(1) #1时间戳  ‘Thu Jan 1 08:00:01 1970’
+4、sleep()    #睡觉/暂停
+    意思：让程序暂停几秒。
+    大坑：它没有返回值（返回None）！
+5、strftime()    #自定义格式
+    意思：把结构体变成你想要的样子。
+    大坑：最灵活，考试最爱考
+                #strftime('%Y-%m-%d  %H:%M:%s',localtime(1))
+%Y    年份           0001~9999
+%m    月份           01~12
+%B    月名           January~December
+%b    月名缩写       Jan~Dec
+%d    日期           01~31
+%A    星期           Monday~Sunday
+%a    星期缩写       Mon~Sun
+%H    小时(24小时)   00~23
+%I    小时(12小时)   01~12
+%P    上/下午        AM，PM
+%M    分钟           00~59
+%S    秒             00~59
+
+
+第十章  Python 第三方库
+10.1  第三方库的安装
+1、pip工具安装：
+      pip install <安装库名>   #在cmd中运行
+      pip list    #查看已安装的第三方库
+      pip install -i https://pypi.doubanio.com/simple/<库名>
+2、自定义安装：（只需了解）
+    按照第三方库提供的步骤和方式安装。第三方库都有主页
+自定义安装一般适用于在pip中 尚无登记 或 安装失败 的第三方库
+
+
+10.2  PyInstaller库
+1、核心功能：
+    打包工具：将.py源代码打包成可执行文件(.exe)。
+    跨平台运行：在没有安装Python环境的电脑上也能直接运行程序。
+    方便传递：将程序变成一个独立文件，以便于发送和管理。
+        #cmd中安装和运行
+        #cmd中输入d:可将库改为D盘
+        cd <路径>
+        PyInstaller -F 2.py
+2、安装与使用：
+    安装命令：pip install pyinstaller
+    关键特性：针对不同操作系统打包生成的文件不同。
+        Windows下打包生成.exe文件
+        Mac/Linux下打包生成对应系统的可执行文件。
+        (注意：不能把Windows的.exe拿到Mac上运行)
+    记忆小贴士：
+        一句话总结：PyInstaller就是个“打包机”，让你的代码变成双击就能运行的软件，还能发给没装Python的朋友。
+        易错点：它是跨平台的工具，但打包出的文件不通用。
+                  #先安装wheel在安装PyInstaller    #再cmd中注意应该都为小写
+        PyInstaller <Python源文件>————>源文件所在目录生成两个文件夹（可执行文件dist；临时文件build）
+    参数                   功能
+    -h，--help             查看帮助
+    --clean                清理打包过程中的临时文件
+    -D，--onedir           默认值，生成dist目录
+    -F，--onefile          在dist文件夹中只生成独立的打包文件
+    -i<图标文件名.ico>      指定打包程序使用的图标文件
+    
