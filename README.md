@@ -752,3 +752,41 @@ jieba库是Python中非常重要的第三方中文分词库。
         问题：中文文章没有空格，wordcloud看不懂，会把一整段话当成一个词
         解决方法：必须先使用jieba库进行分词。
         拼接：分词后，必须用空格把词语连接起来。
+    3、指定中文字体（必考！）：
+        原因：wordcloud默认字体不支持中文，如果不设置，生成的词云全是方框
+        对策：在代码中必须加上font_path='你的中文字体路径.ttx'。
+二、核心类与方法：
+    核心类：WordCloud类（所有的功能都封装在这里）。
+    关键步骤：
+        1、实例化对象。
+        2、调用.generate(txt)方法(注意：txt必须是带空格的字符串)。
+三、高级玩法：自定义形状
+    任意形状：可以生成任何形状的词云（心形、云朵形等）
+    怎么做：需要提供一张轮廓图片，让词云照着这个形状填词。
+font_path                   指定字体文件的完整路径，默认为None
+width                       生成图片宽度，默认400像素
+height                      生成图片高度，默认200像素
+mask                        词云形状，默认None，即方形图
+min_font_size               词云中最小的字体字号，默认4号
+font_step                   字号步进间隔。默认1
+max_font_size               词云中最大的字体字号，默认None，根据高度自动调节
+max_words                   词云图中最大词数，默认200
+stopwords                   被排除词列表，排除词不在词云中显示
+background_color            图片背景颜色，默认黑色
+              WordCloud类的常用方法
+Generate(text)         由text文本生成词云
+To_file(filename)      将词云图保存为filename的文件
+      #下载scipy.misc提取imread
+
+
+10.5  Python第三方库纵览
+Python第三方库大致有八种作用
+    数据分析：numpy，scipy，pandas
+    文本处理：pdfminer，openpyxl，python-docx
+    用户图形界面：PyQt5，wxPython，PyGTK
+    机器学习：scikit-learn，tensorFlow，Theano
+    Web开发：Django，Pyramid，Flask
+    游戏开发：Pygame，Panda3D，cocos2d
+    数据可视化：matplotlib，TVTK，mayavi
+    网络爬虫：requests，scrapy
+
