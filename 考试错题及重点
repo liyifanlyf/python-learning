@@ -32,4 +32,21 @@ int("100/3")这种会有转换错误，会报错。哪怕是1.0都会报错
 
 Python是脚本语言，用解释方式执行。解释过后生成目标代码
 
-print，eval
+print，eval保留字，这种后面加（）的，都不是保留字
+
+await是用作异常处理的保留字
+保留字有35个：and,as,assert,async,await,break,class,continue,def,del,elif,else,except,False,finally,for,from,global,if,import,in,is,lambda,None,nonlocal,not,or,pass,return,Turn,try,with,while,yield,raise.
+
+pass是用来补全代码格式的
+
+#注释可以放在任何地方，三引号注释只能放在开头
+
+a,b=1,2或(a,b)=(1,2),这种行为叫作元组赋值
+
+if,while,def,class最后面都要用‘：’结尾      #特别是class要记住
+
+想要输出文件的内容，需要把文件的内容读入，如txt1=txt.read()
+
+writelines()方式写入文件，会把列表格式去掉，没有间隔
+
+0.1+0.2==0.3，输出结果是False，因为0.1+0.2==0.30004
